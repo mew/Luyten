@@ -1,7 +1,11 @@
-/.settings
+.settings/
 .classpath
 .project
-/bin
+bin/
 /target
-/lib
-/resources
+lib/
+resources/
+*.iml
+.idea/
+.gradle/
+build/

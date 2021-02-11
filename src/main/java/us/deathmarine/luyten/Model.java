@@ -589,7 +589,7 @@ public class Model extends JSplitPane {
 	private class Tab extends JPanel {
 		private static final long serialVersionUID = -514663009333644974L;
 		private JLabel closeButton = new JLabel(new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/icon_close.png"))));
+				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/icon_close.png"))));
 		private JLabel tabTitle = new JLabel();
 		private String title = "";
 

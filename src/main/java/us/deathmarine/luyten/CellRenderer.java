@@ -18,13 +18,13 @@ public class CellRenderer extends DefaultTreeCellRenderer {
 
 	public CellRenderer() {
 		this.pack = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/package_obj.png")));
+				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/package_obj.png")));
 		this.java_image = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/java.png")));
+				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/java.png")));
 		this.yml_image = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/yml.png")));
+				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/yml.png")));
 		this.file_image = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/file.png")));
+				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/file.png")));
 	}
 	
 	@Override
