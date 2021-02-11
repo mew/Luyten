@@ -1,12 +1,13 @@
 package us.deathmarine.luyten;
 
+import com.github.weisj.darklaf.LafManager;
+import com.github.weisj.darklaf.theme.event.ThemeInstalledListener;
+
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
@@ -19,17 +20,13 @@ import java.util.concurrent.atomic.AtomicReference;
  * Starter, the main class
  */
 public class Luyten {
-
-	private static final AtomicReference<MainWindow> mainWindowRef = new AtomicReference<>();
+	public static final AtomicReference<MainWindow> mainWindowRef = new AtomicReference<>();
 	private static final List<File> pendingFiles = new ArrayList<>();
 
 	public static void main(String[] args) {
-
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
+        System.setProperty("sun.java2d.xrender", "true");
 
 		// for TotalCommander External Viewer setting:
 		// javaw -jar "c:\Program Files\Luyten\luyten.jar"
@@ -37,17 +34,18 @@ public class Luyten {
 		// .zip or .jar)
 		final File fileFromCommandLine = getFileFromCommandLine(args);
 
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				if (!mainWindowRef.compareAndSet(null, new MainWindow(fileFromCommandLine))) {
-					// Already set - so add the files to open
-					openFileInInstance(fileFromCommandLine);
-				}
-				processPendingFiles();
-				mainWindowRef.get().setVisible(true);
-			}
-		});
+		SwingUtilities.invokeLater(() -> {
+            LafManager.install(ThemeUtil.themeMap.getOrDefault(ConfigSaver.getLoadedInstance().getLuytenPreferences().getTheme(), LafManager.getInstalledTheme()));
+            LafManager.addThemeChangeListener((ThemeInstalledListener) e -> ThemeUtil.onThemeChange());
+
+            if (!mainWindowRef.compareAndSet(null, new MainWindow(fileFromCommandLine))) {
+                // Already set - so add the files to open
+                openFileInInstance(fileFromCommandLine);
+            }
+            processPendingFiles();
+
+            mainWindowRef.get().setVisible(true);
+        });
 	}
 
 	// Private function which processes all pending files - synchronized on the
@@ -154,13 +152,10 @@ public class Luyten {
 					new JPopupMenu() {
 						{
 							JMenuItem menuitem = new JMenuItem("Select All");
-							menuitem.addActionListener(new ActionListener() {
-								@Override
-								public void actionPerformed(ActionEvent e) {
-									exception.requestFocus();
-									exception.selectAll();
-								}
-							});
+							menuitem.addActionListener(e12 -> {
+                                exception.requestFocus();
+                                exception.selectAll();
+                            });
 							this.add(menuitem);
 							menuitem = new JMenuItem("Copy");
 							menuitem.addActionListener(new DefaultEditorKit.CopyAction());

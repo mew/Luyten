@@ -1,43 +1,20 @@
 package us.deathmarine.luyten;
 
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.Font;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import com.strobel.Procyon;
+import com.strobel.decompiler.DecompilerSettings;
+import com.strobel.decompiler.languages.Language;
+import com.strobel.decompiler.languages.Languages;
+
+import javax.swing.*;
+import javax.swing.text.DefaultEditorKit;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.File;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
-
-import javax.swing.AbstractAction;
-import javax.swing.AbstractButton;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.ButtonModel;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JTabbedPane;
-import javax.swing.KeyStroke;
-import javax.swing.text.DefaultEditorKit;
-
-import com.strobel.Procyon;
-import com.strobel.decompiler.DecompilerSettings;
-import com.strobel.decompiler.languages.Language;
-import com.strobel.decompiler.languages.Languages;
 
 /**
  * Main menu (only MainWindow should be called from here)
@@ -164,12 +141,7 @@ public class MainMenuBar extends JMenuBar {
 			}
 			
 			JMenuItem menuItem = new JMenuItem(path);
-			menuItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					mainWindow.getModel().loadFile(file);
-				}
-			});
+			menuItem.addActionListener(e -> mainWindow.getModel().loadFile(file));
 			recentFiles.add(menuItem);
 		}
 		
@@ -181,12 +153,7 @@ public class MainMenuBar extends JMenuBar {
 		JMenuItem menuItem = new JMenuItem("Open File...");
 		menuItem.setAccelerator(
 				KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		menuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				mainWindow.onOpenFileMenu();
-			}
-		});
+		menuItem.addActionListener(e -> mainWindow.onOpenFileMenu());
 		fileMenu.add(menuItem);
 		fileMenu.addSeparator();
 
@@ -332,48 +299,19 @@ public class MainMenuBar extends JMenuBar {
 		menuItem = new JMenuItem("Find All");
 		menuItem.setAccelerator(
 				KeyStroke.getKeyStroke(KeyEvent.VK_G, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		menuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				mainWindow.onFindAllMenu();
-
-			}
-		});
+		menuItem.addActionListener(e -> mainWindow.onFindAllMenu());
 		editMenu.add(menuItem);
 	}
 
 	private void buildThemesMenu(JMenu themesMenu) {
 		themesMenu.removeAll();
 		themesGroup = new ButtonGroup();
-		JRadioButtonMenuItem a = new JRadioButtonMenuItem(new ThemeAction("Default", "default.xml"));
-		a.setSelected("default.xml".equals(luytenPrefs.getThemeXml()));
-		themesGroup.add(a);
-		themesMenu.add(a);
-
-		a = new JRadioButtonMenuItem(new ThemeAction("Default-Alt", "default-alt.xml"));
-		a.setSelected("default-alt.xml".equals(luytenPrefs.getThemeXml()));
-		themesGroup.add(a);
-		themesMenu.add(a);
-
-		a = new JRadioButtonMenuItem(new ThemeAction("Dark", "dark.xml"));
-		a.setSelected("dark.xml".equals(luytenPrefs.getThemeXml()));
-		themesGroup.add(a);
-		themesMenu.add(a);
-
-		a = new JRadioButtonMenuItem(new ThemeAction("Eclipse", "eclipse.xml"));
-		a.setSelected("eclipse.xml".equals(luytenPrefs.getThemeXml()));
-		themesGroup.add(a);
-		themesMenu.add(a);
-
-		a = new JRadioButtonMenuItem(new ThemeAction("Visual Studio", "vs.xml"));
-		a.setSelected("vs.xml".equals(luytenPrefs.getThemeXml()));
-		themesGroup.add(a);
-		themesMenu.add(a);
-
-		a = new JRadioButtonMenuItem(new ThemeAction("IntelliJ", "idea.xml"));
-		a.setSelected("idea.xml".equals(luytenPrefs.getThemeXml()));
-		themesGroup.add(a);
-		themesMenu.add(a);
+        for (String themeName : ThemeUtil.themeMap.keySet()) {
+            JRadioButtonMenuItem themeRadioButtonMenuItem = new JRadioButtonMenuItem(new ThemeAction(themeName, themeName));
+            themeRadioButtonMenuItem.setSelected(themeName.equals(luytenPrefs.getTheme()));
+            themesGroup.add(themeRadioButtonMenuItem);
+            themesMenu.add(themeRadioButtonMenuItem);
+        }
 	}
 
 	private void buildOperationMenu(JMenu operationMenu) {
@@ -412,29 +350,16 @@ public class MainMenuBar extends JMenuBar {
 
 		exitByEscEnabled = new JCheckBoxMenuItem("Exit By Esc");
 		exitByEscEnabled.setSelected(luytenPrefs.isExitByEscEnabled());
-		exitByEscEnabled.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				luytenPrefs.setExitByEscEnabled(exitByEscEnabled.isSelected());
-			}
-		});
+		exitByEscEnabled.addActionListener(e -> luytenPrefs.setExitByEscEnabled(exitByEscEnabled.isSelected()));
 		operationMenu.add(exitByEscEnabled);
 	}
 
 	private void buildSettingsMenu(JMenu settingsMenu, ConfigSaver configSaver) {
 		settingsMenu.removeAll();
-		ActionListener settingsChanged = new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				new Thread() {
-					@Override
-					public void run() {
-						populateSettingsFromSettingsMenu();
-						mainWindow.onSettingsChanged();
-					}
-				}.start();
-			}
-		};
+		ActionListener settingsChanged = e -> new Thread(() -> {
+            populateSettingsFromSettingsMenu();
+            mainWindow.onSettingsChanged();
+        }).start();
 		flattenSwitchBlocks = new JCheckBoxMenuItem("Flatten Switch Blocks");
 		flattenSwitchBlocks.setSelected(settings.getFlattenSwitchBlocks());
 		flattenSwitchBlocks.addActionListener(settingsChanged);
@@ -528,63 +453,50 @@ public class MainMenuBar extends JMenuBar {
 	private void buildHelpMenu(JMenu helpMenu) {
 		helpMenu.removeAll();
 		JMenuItem menuItem = new JMenuItem("Legal");
-		menuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				mainWindow.onLegalMenu();
-			}
-		});
+		menuItem.addActionListener(e -> mainWindow.onLegalMenu());
 		helpMenu.add(menuItem);
 		JMenu menuDebug = new JMenu("Debug");
 		menuItem = new JMenuItem("List JVM Classes");
-		menuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				mainWindow.onListLoadedClasses();
-			}
-		});
+		menuItem.addActionListener(e -> mainWindow.onListLoadedClasses());
 		menuDebug.add(menuItem);
 		helpMenu.add(menuDebug);
 		menuItem = new JMenuItem("About");
-		menuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent event) {
-				JPanel pane = new JPanel();
-				pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
-				JLabel title = new JLabel("Luyten " + Luyten.getVersion());
-				title.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
-				pane.add(title);
-				pane.add(new JLabel("by Deathmarine"));
-				String project = "https://github.com/deathmarine/Luyten/";
-				JLabel link = new JLabel("<HTML><FONT color=\"#000099\"><U>" + project + "</U></FONT></HTML>");
-				link.setCursor(new Cursor(Cursor.HAND_CURSOR));
-				link.addMouseListener(new LinkListener(project, link));
-				pane.add(link);
-				pane.add(new JLabel("Contributions By:"));
-				pane.add(new JLabel("zerdei, toonetown, dstmath"));
-				pane.add(new JLabel("virustotalop, xtrafrancyz,"));
-				pane.add(new JLabel("mbax, quitten, mstrobel,"));
-				pane.add(new JLabel("FisheyLP, and Syquel"));
-				pane.add(new JLabel(" "));
-				pane.add(new JLabel("Powered By:"));
-				String procyon = "https://bitbucket.org/mstrobel/procyon";
-				link = new JLabel("<HTML><FONT color=\"#000099\"><U>" + procyon + "</U></FONT></HTML>");
-				link.setCursor(new Cursor(Cursor.HAND_CURSOR));
-				link.addMouseListener(new LinkListener(procyon, link));
-				pane.add(link);
-				pane.add(new JLabel("Version: " + Procyon.version()));
-				pane.add(new JLabel("(c) 2018 Mike Strobel"));
-				String rsyntax = "https://github.com/bobbylight/RSyntaxTextArea";
-				link = new JLabel("<HTML><FONT color=\"#000099\"><U>" + rsyntax + "</U></FONT></HTML>");
-				link.setCursor(new Cursor(Cursor.HAND_CURSOR));
-				link.addMouseListener(new LinkListener(rsyntax, link));
-				pane.add(link);
-				pane.add(new JLabel("Version: 3.0.2"));
-				pane.add(new JLabel("(c) 2019 Robert Futrell"));
-				pane.add(new JLabel(" "));
-				JOptionPane.showMessageDialog(null, pane);
-			}
-		});
+		menuItem.addActionListener(event -> {
+            JPanel pane = new JPanel();
+            pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
+            JLabel title = new JLabel("Luyten " + Luyten.getVersion());
+            title.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+            pane.add(title);
+            pane.add(new JLabel("by Deathmarine"));
+            String project = "https://github.com/deathmarine/Luyten/";
+            JLabel link = new JLabel("<HTML><FONT color=\"#000099\"><U>" + project + "</U></FONT></HTML>");
+            link.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            link.addMouseListener(new LinkListener(project, link));
+            pane.add(link);
+            pane.add(new JLabel("Contributions By:"));
+            pane.add(new JLabel("zerdei, toonetown, dstmath"));
+            pane.add(new JLabel("virustotalop, xtrafrancyz,"));
+            pane.add(new JLabel("mbax, quitten, mstrobel,"));
+            pane.add(new JLabel("FisheyLP, and Syquel"));
+            pane.add(new JLabel(" "));
+            pane.add(new JLabel("Powered By:"));
+            String procyon = "https://bitbucket.org/mstrobel/procyon";
+            link = new JLabel("<HTML><FONT color=\"#000099\"><U>" + procyon + "</U></FONT></HTML>");
+            link.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            link.addMouseListener(new LinkListener(procyon, link));
+            pane.add(link);
+            pane.add(new JLabel("Version: " + Procyon.version()));
+            pane.add(new JLabel("(c) 2018 Mike Strobel"));
+            String rsyntax = "https://github.com/bobbylight/RSyntaxTextArea";
+            link = new JLabel("<HTML><FONT color=\"#000099\"><U>" + rsyntax + "</U></FONT></HTML>");
+            link.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            link.addMouseListener(new LinkListener(rsyntax, link));
+            pane.add(link);
+            pane.add(new JLabel("Version: 3.0.2"));
+            pane.add(new JLabel("(c) 2019 Robert Futrell"));
+            pane.add(new JLabel(" "));
+            JOptionPane.showMessageDialog(null, pane);
+        });
 		helpMenu.add(menuItem);
 	}
 
@@ -631,16 +543,16 @@ public class MainMenuBar extends JMenuBar {
 
 	private class ThemeAction extends AbstractAction {
 		private static final long serialVersionUID = -6618680171943723199L;
-		private String xml;
+		private String newTheme;
 
-		public ThemeAction(String name, String xml) {
-			putValue(NAME, name);
-			this.xml = xml;
+		public ThemeAction(String actionName, String themeName) {
+			putValue(NAME, actionName);
+			this.newTheme = themeName;
 		}
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			luytenPrefs.setThemeXml(xml);
+			luytenPrefs.setTheme(newTheme);
 			mainWindow.onThemesChanged();
 		}
 	}

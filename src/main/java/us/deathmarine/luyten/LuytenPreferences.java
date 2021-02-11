@@ -8,10 +8,7 @@ package us.deathmarine.luyten;
  * default values into the field declarations.
  */
 public class LuytenPreferences {
-	public static final String THEME_XML_PATH = "/org/fife/ui/rsyntaxtextarea/themes/";
-	public static final String DEFAULT_THEME_XML = "eclipse.xml";
-
-	private String themeXml = DEFAULT_THEME_XML;
+	private String theme = "Darcula";
 	private String fileOpenCurrentDirectory = "";
 	private String fileSaveCurrentDirectory = "";
 	private int font_size = 10;
@@ -21,12 +18,12 @@ public class LuytenPreferences {
 	private boolean isSingleClickOpenEnabled = true;
 	private boolean isExitByEscEnabled = false;
 
-	public String getThemeXml() {
-		return themeXml;
+	public String getTheme() {
+		return theme;
 	}
 
-	public void setThemeXml(String themeXml) {
-		this.themeXml = themeXml;
+	public void setTheme(String theme) {
+		this.theme = theme;
 	}
 
 	public String getFileOpenCurrentDirectory() {

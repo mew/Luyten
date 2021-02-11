@@ -14,7 +14,11 @@ dependencies {
     arrayOf("core", "expressions", "reflection", "compilertools").forEach {
         implementation("org.bitbucket.mstrobel:procyon-$it:0.5.36")
     }
-    implementation("com.fifesoft:rsyntaxtextarea:2.6.1")
+    implementation("com.fifesoft:rsyntaxtextarea:3.1.2")
+    implementation("com.github.weisj:darklaf-core:2.5.5")
+    implementation("com.github.weisj:darklaf-theme:2.5.5")
+    implementation("com.github.weisj:darklaf-property-loader:2.5.5")
+    implementation("com.github.weisj:darklaf-extensions-rsyntaxarea:0.3.4")
 }
 
 tasks.withType<Jar> {
