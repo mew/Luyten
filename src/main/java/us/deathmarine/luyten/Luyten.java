@@ -2,6 +2,9 @@ package us.deathmarine.luyten;
 
 import com.github.weisj.darklaf.LafManager;
 import com.github.weisj.darklaf.theme.event.ThemeInstalledListener;
+import us.deathmarine.luyten.config.ConfigSaver;
+import us.deathmarine.luyten.ui.window.MainWindow;
+import us.deathmarine.luyten.util.ThemeUtil;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
