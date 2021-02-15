@@ -63,18 +63,27 @@ public class MainMenuBar extends JMenuBar {
 		final JMenu fileMenu = new JMenu("File");
 		fileMenu.add(new JMenuItem("..."));
 		this.add(fileMenu);
+
 		final JMenu editMenu = new JMenu("Edit");
 		editMenu.add(new JMenuItem("..."));
 		this.add(editMenu);
+
 		final JMenu themesMenu = new JMenu("Themes");
 		themesMenu.add(new JMenuItem("..."));
 		this.add(themesMenu);
+
 		final JMenu operationMenu = new JMenu("Operation");
 		operationMenu.add(new JMenuItem("..."));
 		this.add(operationMenu);
+
+		final JMenu decompilerMenu = new JMenu("Decompilers");
+		decompilerMenu.add(new JMenuItem("..."));
+		this.add(decompilerMenu);
+
 		final JMenu settingsMenu = new JMenu("Settings");
 		settingsMenu.add(new JMenuItem("..."));
 		this.add(settingsMenu);
+
 		final JMenu helpMenu = new JMenu("Help");
 		helpMenu.add(new JMenuItem("..."));
 		this.add(helpMenu);
@@ -95,6 +104,9 @@ public class MainMenuBar extends JMenuBar {
 
 					buildOperationMenu(operationMenu);
 					refreshMenuPopup(operationMenu);
+
+					buildDecompilersMenu(decompilerMenu);
+					refreshMenuPopup(decompilerMenu);
 
 					buildSettingsMenu(settingsMenu);
 					refreshMenuPopup(settingsMenu);
@@ -349,6 +361,22 @@ public class MainMenuBar extends JMenuBar {
 		operationMenu.add(exitByEscEnabled);
 	}
 
+	private void buildDecompilersMenu(JMenu decompilersMenu) {
+	    decompilersMenu.removeAll();
+        ButtonGroup g = new ButtonGroup();
+	    JRadioButtonMenuItem procyon = new JRadioButtonMenuItem(new DecompilerAction("procyon"));
+	    procyon.setText("Procyon");
+	    procyon.setSelected(luytenPrefs.getDecompiler().equals("procyon"));
+        g.add(procyon);
+        decompilersMenu.add(procyon);
+
+        JRadioButtonMenuItem cfr = new JRadioButtonMenuItem(new DecompilerAction("cfr"));
+        cfr.setText("CFR");
+        cfr.setSelected(luytenPrefs.getDecompiler().equals("cfr"));
+        g.add(cfr);
+        decompilersMenu.add(cfr);
+    }
+
 	private void buildSettingsMenu(JMenu settingsMenu) {
 		settingsMenu.removeAll();
 		ActionListener settingsChanged = e -> new Thread(() -> {
@@ -551,6 +579,19 @@ public class MainMenuBar extends JMenuBar {
 			mainWindow.onThemesChanged();
 		}
 	}
+
+	private class DecompilerAction extends AbstractAction {
+	    private String newDecompiler;
+
+	    public DecompilerAction(String decompiler) {
+	        this.newDecompiler = decompiler;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            luytenPrefs.setDecompiler(newDecompiler);
+        }
+    }
 
 	private class LinkListener extends MouseAdapter {
 		String link;

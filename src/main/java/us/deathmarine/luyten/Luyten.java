@@ -13,7 +13,10 @@ import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Starter, the main class
  */
 public class Luyten {
+    private static final String VERSION = "0.5.4";
 	public static final AtomicReference<MainWindow> mainWindowRef = new AtomicReference<>();
 	private static final List<File> pendingFiles = new ArrayList<>();
 
@@ -98,21 +102,7 @@ public class Luyten {
 	}
 
 	public static String getVersion() {
-		String result = "";
-		try {
-			String line;
-			BufferedReader br = new BufferedReader(new InputStreamReader(
-					ClassLoader.getSystemResourceAsStream("META-INF/maven/us.deathmarine/luyten/pom.properties")));
-			while ((line = br.readLine()) != null) {
-				if (line.contains("version"))
-					result = line.split("=")[1];
-			}
-			br.close();
-		} catch (Exception e) {
-			return result;
-		}
-		return result;
-
+	    return VERSION;
 	}
 
 	/**

@@ -6,21 +6,35 @@ import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
 import com.strobel.decompiler.PlainTextOutput;
 import com.strobel.decompiler.languages.Languages;
-import org.fife.ui.rsyntaxtextarea.*;
+import org.benf.cfr.reader.api.CfrDriver;
+import org.benf.cfr.reader.api.ClassFileSource;
+import org.benf.cfr.reader.api.OutputSinkFactory;
+import org.benf.cfr.reader.api.SinkReturns;
+import org.benf.cfr.reader.bytecode.analysis.parse.utils.Pair;
+import org.fife.ui.rsyntaxtextarea.LinkGeneratorResult;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import us.deathmarine.luyten.ui.JFontChooser;
-import us.deathmarine.luyten.util.system.Keymap;
 import us.deathmarine.luyten.Luyten;
 import us.deathmarine.luyten.config.ConfigSaver;
 import us.deathmarine.luyten.config.LuytenPreferences;
+import us.deathmarine.luyten.ui.JFontChooser;
 import us.deathmarine.luyten.ui.window.MainWindow;
 import us.deathmarine.luyten.util.Selection;
+import us.deathmarine.luyten.util.system.Keymap;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -51,7 +65,8 @@ public class OpenFile implements SyntaxConstants {
 	public RSyntaxTextArea textArea;
 	public String name;
 	public String path;
-	
+
+	private byte[] classBytes;
 	private ConfigSaver configSaver;
 	private LuytenPreferences luytenPrefs;
 
@@ -61,10 +76,11 @@ public class OpenFile implements SyntaxConstants {
 	private DecompilationOptions decompilationOptions;
 	private TypeDefinition type;
 
-	public OpenFile(String name, String path, Theme theme, final MainWindow mainWindow) {
+	public OpenFile(String name, String path, Theme theme, byte[] classBytes, final MainWindow mainWindow) {
 		this.name = name;
 		this.path = path;
 		this.mainWindow = mainWindow;
+		this.classBytes = classBytes;
 
 		configSaver = ConfigSaver.getLoadedInstance();
 		luytenPrefs = configSaver.getLuytenPreferences();
@@ -480,17 +496,88 @@ public class OpenFile implements SyntaxConstants {
 		this.isContentValid = true;
 	}
 
+	private String cfrOutput = null;
+
 	private void decompileWithNavigationLinks() {
 		this.invalidateContent();
-		DecompilerLinkProvider newLinkProvider = new DecompilerLinkProvider();
-		newLinkProvider.setDecompilerReferences(metadataSystem, settings, decompilationOptions);
-		newLinkProvider.setType(type);
-		linkProvider = newLinkProvider;
+		if (classBytes == null || luytenPrefs.getDecompiler().equals("procyon")) {
+            DecompilerLinkProvider newLinkProvider = new DecompilerLinkProvider();
+            newLinkProvider.setDecompilerReferences(metadataSystem, settings, decompilationOptions);
+            newLinkProvider.setType(type);
+            linkProvider = newLinkProvider;
 
-		linkProvider.generateContent();
-		setContentPreserveLastScrollPosition(linkProvider.getTextContent());
-		this.isContentValid = true;
-		enableLinks();
+            linkProvider.generateContent();
+            setContentPreserveLastScrollPosition(linkProvider.getTextContent());
+            enableLinks();
+        } else {
+		    try {
+                ClassFileSource cfs = new ClassFileSource() {
+                    @Override
+                    public void informAnalysisRelativePathDetail(String usePath, String classFilePath) {
+                    }
+
+                    @Override
+                    public Collection<String> addJar(String jarPath) {
+                        return null;
+                    }
+
+                    @Override
+                    public String getPossiblyRenamedPath(String path) {
+                        return path;
+                    }
+
+                    @Override
+                    public Pair<byte[], String> getClassFileContent(String path) throws IOException {
+                        // name - .class
+                        String fullName = path.substring(0, path.length() - 6);
+                        System.out.println("CFR Path: " + path);
+                        System.out.println("CFR substring: " + fullName);
+                        System.out.println("Type fullName: " + type.getFullName());
+
+                        if (fullName.replace('/', '.').equals(type.getFullName())) {
+                            System.out.println(Pair.make(classBytes, fullName));
+                            return Pair.make(classBytes, fullName);
+                        }
+
+                        // uh oh!
+                        return null;
+                    }
+                };
+                cfrOutput = null;
+                OutputSinkFactory cfrOutputSink = new OutputSinkFactory() {
+                    @Override
+                    public List<SinkClass> getSupportedSinks(SinkType sinkType, Collection<SinkClass> collection) {
+                        System.out.println("supported sink type " + sinkType);
+                        System.out.println("supported collection " + collection);
+                        if (sinkType == SinkType.JAVA && collection.contains(SinkClass.DECOMPILED)) {
+                            return Arrays.asList(SinkClass.DECOMPILED, SinkClass.STRING);
+                        } else {
+                            return Arrays.asList(SinkClass.STRING, SinkClass.EXCEPTION_MESSAGE);
+                        }
+                    }
+
+                    @Override
+                    public <T> Sink<T> getSink(SinkType sinkType, SinkClass sinkClass) {
+                        System.out.println("sink type " + sinkType);
+                        System.out.println("sink class " + sinkClass);
+                        if (sinkType == SinkType.JAVA && sinkClass == OutputSinkFactory.SinkClass.DECOMPILED) {
+                            return x -> cfrOutput = ((SinkReturns.Decompiled) x).getJava();
+                        } else if (sinkType == SinkType.EXCEPTION) {
+                            return ex -> Luyten.showExceptionDialog("CFR Exception", ((SinkReturns.ExceptionMessage) ex).getThrownException());
+                        }
+                        return ignore -> { };
+                    }
+                };
+                CfrDriver CFR = new CfrDriver.Builder().withClassFileSource(cfs).withOutputSink(cfrOutputSink).build();
+                CFR.analyse(Collections.singletonList(type.getFullName()));
+                setContentPreserveLastScrollPosition(cfrOutput != null ? cfrOutput : "Null CFR output... Maybe it's loading?");
+            } catch (Exception e) {
+		        StringWriter sw = new StringWriter();
+		        e.printStackTrace(new PrintWriter(sw));
+		        setContent(sw.toString());
+            }
+        }
+        this.isContentValid = true;
 	}
 
 	private void setContentPreserveLastScrollPosition(final String content) {
@@ -814,4 +901,11 @@ public class OpenFile implements SyntaxConstants {
 		} else return path.equals(other.path);
     }
 
+    public byte[] getClassBytes() {
+        return classBytes;
+    }
+
+    public void setClassBytes(byte[] classBytes) {
+        this.classBytes = classBytes;
+    }
 }

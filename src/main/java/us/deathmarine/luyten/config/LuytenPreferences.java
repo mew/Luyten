@@ -12,6 +12,7 @@ public class LuytenPreferences {
 	private String fileOpenCurrentDirectory = "";
 	private String fileSaveCurrentDirectory = "";
 	private int font_size = 13;
+	private String decompiler = "procyon";
 
 	private boolean isPackageExplorerStyle = true;
 	private boolean isFilterOutInnerClassEntries = true;
@@ -81,4 +82,12 @@ public class LuytenPreferences {
 	public void setFont_size(int font_size) {
 		this.font_size = font_size;
 	}
+
+    public String getDecompiler() {
+        return decompiler;
+    }
+
+    public void setDecompiler(String decompiler) {
+        this.decompiler = decompiler;
+    }
 }

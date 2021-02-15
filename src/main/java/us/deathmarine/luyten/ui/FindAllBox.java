@@ -82,14 +82,13 @@ public class FindAllBox extends JDialog {
 				JList<String> list = (JList<String>) evt.getSource();
 				if (evt.getClickCount() == 2) {
 					int index = list.locationToIndex(evt.getPoint());
-					String entryName = (String) list.getModel().getElementAt(index);
+					String entryName = list.getModel().getElementAt(index);
 					String[] array = entryName.split("/");
 					if (entryName.toLowerCase().endsWith(".class")) {
 						String internalName = StringUtilities.removeRight(entryName, ".class");
 						TypeReference type = Model.metadataSystem.lookupType(internalName);
 						try {
-							mainWindow.getModel().extractClassToTextPane(type, array[array.length - 1], entryName,
-									null);
+							mainWindow.getModel().extractClassToTextPane(type, array[array.length - 1], entryName, null,null);
 						} catch (Exception e) {
 							Luyten.showExceptionDialog("Exception!", e);
 						}
@@ -97,9 +96,7 @@ public class FindAllBox extends JDialog {
 					} else {
 						try {
 							JarFile jfile = new JarFile(MainWindow.model.getOpenedFile());
-							mainWindow.getModel().extractSimpleFileEntryToTextPane(
-									jfile.getInputStream(jfile.getEntry(entryName)), array[array.length - 1],
-									entryName);
+							mainWindow.getModel().extractSimpleFileEntryToTextPane(jfile.getInputStream(jfile.getEntry(entryName)), array[array.length - 1], entryName);
 							jfile.close();
 						} catch (IOException e) {
 							e.printStackTrace();

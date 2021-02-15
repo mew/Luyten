@@ -10,15 +10,25 @@ repositories {
 }
 
 dependencies {
-    implementation("com.apple:AppleJavaExtensions:1.4")
-    arrayOf("core", "expressions", "reflection", "compilertools").forEach {
+    listOf("core", "expressions", "reflection", "compilertools").forEach {
         implementation("org.bitbucket.mstrobel:procyon-$it:0.5.36")
     }
+    listOf(
+        "core",
+        "theme",
+        "property-loader",
+        "platform-base",
+        "native-utils",
+        "utils",
+        "windows"
+    ).forEach {
+        implementation("com.github.weisj:darklaf-$it:2.5.5")
+    }
+    implementation("commons-io:commons-io:2.5")
+    implementation("org.benf:cfr:0.151")
     implementation("com.fifesoft:rsyntaxtextarea:3.1.2")
-    implementation("com.github.weisj:darklaf-core:2.5.5")
-    implementation("com.github.weisj:darklaf-theme:2.5.5")
-    implementation("com.github.weisj:darklaf-property-loader:2.5.5")
     implementation("com.github.weisj:darklaf-extensions-rsyntaxarea:0.3.4")
+    implementation("com.formdev:svgSalamander:1.1.2.3")
 }
 
 tasks.withType<Jar> {

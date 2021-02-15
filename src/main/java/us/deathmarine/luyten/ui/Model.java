@@ -10,26 +10,28 @@ import com.strobel.core.VerifyArgument;
 import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
 import com.strobel.decompiler.PlainTextOutput;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import us.deathmarine.luyten.util.system.Keymap;
 import us.deathmarine.luyten.Luyten;
 import us.deathmarine.luyten.config.ConfigSaver;
 import us.deathmarine.luyten.config.LuytenPreferences;
 import us.deathmarine.luyten.decompiler.JarEntryFilter;
 import us.deathmarine.luyten.decompiler.LuytenTypeLoader;
 import us.deathmarine.luyten.decompiler.OpenFile;
-import us.deathmarine.luyten.ui.tree.CellRenderer;
 import us.deathmarine.luyten.ui.file.exceptions.FileEntryNotFoundException;
 import us.deathmarine.luyten.ui.file.exceptions.FileIsBinaryException;
 import us.deathmarine.luyten.ui.file.exceptions.TooLargeFileException;
+import us.deathmarine.luyten.ui.tree.CellRenderer;
+import us.deathmarine.luyten.ui.tree.TreeHelper;
 import us.deathmarine.luyten.ui.tree.TreeNodeUserObject;
 import us.deathmarine.luyten.ui.window.MainWindow;
 import us.deathmarine.luyten.util.Closer;
 import us.deathmarine.luyten.util.RecentFiles;
 import us.deathmarine.luyten.util.ThemeUtil;
-import us.deathmarine.luyten.ui.tree.TreeHelper;
+import us.deathmarine.luyten.util.system.Keymap;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -59,7 +61,7 @@ public class Model extends JSplitPane {
 
 	private JTree tree;
 	public JTabbedPane house;
-	private File file;
+	public File file;
 	private DecompilerSettings settings;
 	private DecompilationOptions decompilationOptions;
 	private Theme theme;
@@ -162,7 +164,7 @@ public class Model extends JSplitPane {
 	}
 
 	public void show(String name, String contents) {
-		OpenFile open = new OpenFile(name, "*/" + name, getTheme(), mainWindow);
+		OpenFile open = new OpenFile(name, "*/" + name, getTheme(), null, mainWindow);
 		open.setContent(contents);
 		hmap.add(open);
 		addOrSwitchToTab(open);
@@ -319,11 +321,13 @@ public class Model extends JSplitPane {
 					if (entryName.endsWith(".class")) {
 						getLabel().setText("Extracting: " + name);
 						String internalName = StringUtilities.removeRight(entryName, ".class");
+						InputStream jarInputStream = state.jarFile.getInputStream(entry);
+                        byte[] classBytes = IOUtils.toByteArray(jarInputStream);
 						TypeReference type = metadataSystem.lookupType(internalName);
-						extractClassToTextPane(type, name, path, null);
+						extractClassToTextPane(type, name, path, classBytes, null);
 					} else {
 						getLabel().setText("Opening: " + name);
-						try (InputStream in = state.jarFile.getInputStream(entry);) {
+						try (InputStream in = state.jarFile.getInputStream(entry)) {
 							extractSimpleFileEntryToTextPane(in, name, path);
 						}
 					}
@@ -337,7 +341,7 @@ public class Model extends JSplitPane {
 				if (name.endsWith(".class")) {
 					getLabel().setText("Extracting: " + name);
 					TypeReference type = metadataSystem.lookupType(path);
-					extractClassToTextPane(type, name, path, null);
+					extractClassToTextPane(type, name, path, FileUtils.readFileToByteArray(file), null);
 				} else {
 					getLabel().setText("Opening: " + name);
 					try (InputStream in = new FileInputStream(file);) {
@@ -361,7 +365,7 @@ public class Model extends JSplitPane {
 		}
 	}
 
-	void extractClassToTextPane(TypeReference type, String tabTitle, String path, String navigatonLink)
+	void extractClassToTextPane(TypeReference type, String tabTitle, String path, byte[] classBytes, String navigatonLink)
 			throws Exception {
 		if (tabTitle == null || tabTitle.trim().length() < 1 || path == null) {
 			throw new FileEntryNotFoundException();
@@ -391,12 +395,15 @@ public class Model extends JSplitPane {
 			sameTitledOpen.invalidateContent();
 			sameTitledOpen.setDecompilerReferences(metadataSystem, settings, decompilationOptions);
 			sameTitledOpen.setType(resolvedType);
+			if (classBytes != null) {
+			    sameTitledOpen.setClassBytes(classBytes);
+            }
 			sameTitledOpen.setInitialNavigationLink(navigatonLink);
 			sameTitledOpen.resetScrollPosition();
 			sameTitledOpen.decompile();
 			addOrSwitchToTab(sameTitledOpen);
 		} else {
-			OpenFile open = new OpenFile(tabTitle, path, getTheme(), mainWindow);
+			OpenFile open = new OpenFile(tabTitle, path, getTheme(), classBytes, mainWindow);
 			open.setDecompilerReferences(metadataSystem, settings, decompilationOptions);
 			open.setType(resolvedType);
 			open.setInitialNavigationLink(navigatonLink);
@@ -457,7 +464,7 @@ public class Model extends JSplitPane {
 			sameTitledOpen.setContent(sb.toString());
 			addOrSwitchToTab(sameTitledOpen);
 		} else {
-			OpenFile open = new OpenFile(tabTitle, path, getTheme(), mainWindow);
+			OpenFile open = new OpenFile(tabTitle, path, getTheme(), IOUtils.toByteArray(inputStream), mainWindow);
 			open.setDecompilerReferences(metadataSystem, settings, decompilationOptions);
 			open.setContent(sb.toString());
 			hmap.add(open);
@@ -951,7 +958,7 @@ public class Model extends JSplitPane {
                         .setUnicodeOutputEnabled(decompilationOptions.getSettings().isUnicodeOutputEnabled());
                 settings.getLanguage().decompileType(resolvedType, plainTextOutput, decompilationOptions);
                 String decompiledSource = stringwriter.toString();
-                OpenFile open = new OpenFile(internalName, "*/" + internalName, getTheme(), mainWindow);
+                OpenFile open = new OpenFile(internalName, "*/" + internalName, getTheme(), null, mainWindow);
                 open.setContent(decompiledSource);
                 JTabbedPane pane = new JTabbedPane();
                 pane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -983,7 +990,7 @@ public class Model extends JSplitPane {
                     throw new RuntimeException("Cannot resolve type: " + destinationTypeStr);
 
                 String tabTitle = typeDef.getName() + ".class";
-                extractClassToTextPane(typeDef, tabTitle, destinationTypeStr, uniqueStr);
+                extractClassToTextPane(typeDef, tabTitle, destinationTypeStr, null, uniqueStr);
 
                 getLabel().setText("Complete");
             } catch (Exception e) {
