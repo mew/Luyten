@@ -42,7 +42,7 @@ public class Luyten {
 		final File fileFromCommandLine = getFileFromCommandLine(args);
 
 		SwingUtilities.invokeLater(() -> {
-            LafManager.install(ThemeUtil.themeMap.getOrDefault(ConfigSaver.getLoadedInstance().getLuytenPreferences().getTheme(), LafManager.getInstalledTheme()));
+            LafManager.install(ThemeUtil.THEME_MAP.getOrDefault(ConfigSaver.getLoadedInstance().getLuytenPreferences().getTheme(), LafManager.getInstalledTheme()));
             LafManager.addThemeChangeListener((ThemeInstalledListener) e -> ThemeUtil.onThemeChange());
 
             if (!mainWindowRef.compareAndSet(null, new MainWindow(fileFromCommandLine))) {

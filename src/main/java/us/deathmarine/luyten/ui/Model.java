@@ -617,7 +617,7 @@ public class Model extends JSplitPane {
 	public DefaultMutableTreeNode loadNodesByNames(DefaultMutableTreeNode node, List<String> originalNames) {
 		List<TreeNodeUserObject> args = new ArrayList<>();
 		for (String originalName : originalNames) {
-			args.add(new TreeNodeUserObject(originalName));
+			args.add(new TreeNodeUserObject(originalName, null));
 		}
 		return loadNodesByUserObj(node, args);
 	}
@@ -695,7 +695,7 @@ public class Model extends JSplitPane {
                     open = true;
                     getLabel().setText("Complete");
                 } else {
-                    TreeNodeUserObject topNodeUserObject = new TreeNodeUserObject(getName(file.getName()));
+                    TreeNodeUserObject topNodeUserObject = new TreeNodeUserObject(getName(file.getName()), FileUtils.readFileToByteArray(file));
                     final DefaultMutableTreeNode top = new DefaultMutableTreeNode(topNodeUserObject);
                     tree.setModel(new DefaultTreeModel(top));
                     settings.setTypeLoader(new InputTypeLoader());
@@ -731,7 +731,7 @@ public class Model extends JSplitPane {
         }).start();
 	}
 
-	private void buildTreeFromMass(List<String> mass) {
+	private void buildTreeFromMass(List<String> mass) throws IOException {
 		if (luytenPrefs.isPackageExplorerStyle()) {
 			buildFlatTreeFromMass(mass);
 		} else {
@@ -739,8 +739,8 @@ public class Model extends JSplitPane {
 		}
 	}
 
-	private void buildDirectoryTreeFromMass(List<String> mass) {
-		TreeNodeUserObject topNodeUserObject = new TreeNodeUserObject(getName(file.getName()));
+	private void buildDirectoryTreeFromMass(List<String> mass) throws IOException {
+		TreeNodeUserObject topNodeUserObject = new TreeNodeUserObject(getName(file.getName()), FileUtils.readFileToByteArray(file));
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode(topNodeUserObject);
 		List<String> sort = new ArrayList<String>();
 		Collections.sort(mass, String.CASE_INSENSITIVE_ORDER);
@@ -774,8 +774,8 @@ public class Model extends JSplitPane {
 		tree.setModel(new DefaultTreeModel(top));
 	}
 
-	private void buildFlatTreeFromMass(List<String> mass) {
-		TreeNodeUserObject topNodeUserObject = new TreeNodeUserObject(getName(file.getName()));
+	private void buildFlatTreeFromMass(List<String> mass) throws IOException {
+		TreeNodeUserObject topNodeUserObject = new TreeNodeUserObject(getName(file.getName()), FileUtils.readFileToByteArray(file));
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode(topNodeUserObject);
 
 		TreeMap<String, TreeSet<String>> packages = new TreeMap<>();
@@ -828,8 +828,42 @@ public class Model extends JSplitPane {
 			if (classContainingPackageRoots.contains(packageRoot)) {
 				for (String entry : packages.get(packagePath)) {
 					ArrayList<TreeNodeUserObject> list = new ArrayList<>();
-					list.add(new TreeNodeUserObject(packagePath, packagePath.replaceAll("/", ".")));
-					list.add(new TreeNodeUserObject(entry));
+					list.add(new TreeNodeUserObject(packagePath, packagePath.replaceAll("/", "."), null));
+					JarEntry jarEntry;
+					String s = packagePath.replace('.', '/') + "/" + entry;
+					System.out.println(s);
+					JarFile jf;
+					try {
+					    jf = state != null ? state.jarFile : new JarFile(file);
+					    System.out.println(jf.getName());
+                        jarEntry = jf.getJarEntry(s);
+                    } catch (NullPointerException e) {
+					    System.out.println("null : " + s);
+					    continue;
+                    }
+                    if (jarEntry == null) {
+                        System.out.println("JA RENTRY IS NULL");
+                        continue;
+                    }
+                    if (jarEntry.getSize() > MAX_UNPACKED_FILE_SIZE_BYTES) {
+                        continue;
+                    }
+                    String entryName = jarEntry.getName();
+                    System.out.println(entryName);
+                    if (entryName.endsWith("class")) {
+                        try {
+                            getLabel().setText("Extracting: " + jarEntry.getName());
+                            String internalName = StringUtilities.removeRight(entryName, ".class");
+                            InputStream jarInputStream = jf.getInputStream(jarEntry);
+                            byte[] classBytes = IOUtils.toByteArray(jarInputStream);
+                            list.add(new TreeNodeUserObject(entry, classBytes));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            continue;
+                        }
+                    } else {
+                        list.add(new TreeNodeUserObject(entry, null));
+                    }
 					loadNodesByUserObj(top, list);
 				}
 			}
@@ -885,7 +919,7 @@ public class Model extends JSplitPane {
 	}
 
 	public void changeTheme(String themeName) {
-        LafManager.install(LafManager.getClosestMatchForTheme(ThemeUtil.themeMap.get(themeName)));
+        LafManager.install(LafManager.getClosestMatchForTheme(ThemeUtil.THEME_MAP.get(themeName)));
 		setTheme(new DarklafRSyntaxTheme());
 		ThemeSettings.getInstance().apply();
 	}

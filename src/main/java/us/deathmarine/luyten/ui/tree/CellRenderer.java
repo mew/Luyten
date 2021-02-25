@@ -1,5 +1,9 @@
 package us.deathmarine.luyten.ui.tree;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
+import us.deathmarine.luyten.util.ThemeUtil;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -7,14 +11,11 @@ import java.awt.*;
 
 public class CellRenderer extends DefaultTreeCellRenderer {
 	private static final long serialVersionUID = -5691181006363313993L;
-	Icon pack;
 	Icon java_image;
 	Icon yml_image;
 	Icon file_image;
 
 	public CellRenderer() {
-		this.pack = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/package_obj.png")));
 		this.java_image = new ImageIcon(
 				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/java.png")));
 		this.yml_image = new ImageIcon(
@@ -28,9 +29,15 @@ public class CellRenderer extends DefaultTreeCellRenderer {
 			int row, boolean hasFocus) {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-		if (node.getChildCount() > 0) {
-			setIcon(this.pack);
-		} else if (getFileName(node).endsWith(".class") || getFileName(node).endsWith(".java")) {
+        byte[] f = ((TreeNodeUserObject) node.getUserObject()).getFile();
+        if (node.getChildCount() > 0) {
+            setIcon(ThemeUtil.PACKAGE_ICON);
+		} else if (f != null) {
+            ClassReader reader = new ClassReader(f);
+            ClassNode cn = new ClassNode();
+            reader.accept(cn, ClassReader.SKIP_CODE);
+            setIcon(ThemeUtil.getIconFromClassNode(cn));
+        } else if (getFileName(node).endsWith(".class") || getFileName(node).endsWith(".java")) {
 			setIcon(this.java_image);
 		} else if (getFileName(node).endsWith(".yml") || getFileName(node).endsWith(".yaml")) {
 			setIcon(this.yml_image);
@@ -44,5 +51,4 @@ public class CellRenderer extends DefaultTreeCellRenderer {
 	public String getFileName(DefaultMutableTreeNode node) {
 		return ((TreeNodeUserObject) node.getUserObject()).getOriginalName();
 	}
-
 }

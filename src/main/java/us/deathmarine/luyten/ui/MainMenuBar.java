@@ -324,7 +324,7 @@ public class MainMenuBar extends JMenuBar {
 	private void buildThemesMenu(JMenu themesMenu) {
 		themesMenu.removeAll();
 		themesGroup = new ButtonGroup();
-        for (String themeName : ThemeUtil.themeMap.keySet()) {
+        for (String themeName : ThemeUtil.THEME_MAP.keySet()) {
             JRadioButtonMenuItem themeRadioButtonMenuItem = new JRadioButtonMenuItem(new ThemeAction(themeName, themeName));
             themeRadioButtonMenuItem.setSelected(themeName.equals(luytenPrefs.getTheme()));
             themesGroup.add(themeRadioButtonMenuItem);
@@ -371,7 +371,7 @@ public class MainMenuBar extends JMenuBar {
         decompilersMenu.add(procyon);
 
         JRadioButtonMenuItem cfr = new JRadioButtonMenuItem(new DecompilerAction("cfr"));
-        cfr.setText("CFR");
+        cfr.setText("CFR (Experimental)");
         cfr.setSelected(luytenPrefs.getDecompiler().equals("cfr"));
         g.add(cfr);
         decompilersMenu.add(cfr);

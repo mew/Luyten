@@ -16,6 +16,8 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
 import us.deathmarine.luyten.Luyten;
 import us.deathmarine.luyten.config.ConfigSaver;
 import us.deathmarine.luyten.config.LuytenPreferences;
@@ -498,6 +500,17 @@ public class OpenFile implements SyntaxConstants {
 
 	private String cfrOutput = null;
 
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
 	private void decompileWithNavigationLinks() {
 		this.invalidateContent();
 		if (classBytes == null || luytenPrefs.getDecompiler().equals("procyon")) {
@@ -510,6 +523,14 @@ public class OpenFile implements SyntaxConstants {
             setContentPreserveLastScrollPosition(linkProvider.getTextContent());
             enableLinks();
         } else {
+		    System.out.println(name + ":");
+		    System.out.println(bytesToHex(classBytes));
+		    System.out.println("---------------------------------");
+            ClassReader cr = new ClassReader(classBytes);
+            ClassNode cn = new ClassNode();
+            cr.accept(cn, ClassReader.SKIP_CODE);
+            System.out.println(cn.name);
+            System.out.println(cn.access);
 		    try {
                 ClassFileSource cfs = new ClassFileSource() {
                     @Override
@@ -530,12 +551,8 @@ public class OpenFile implements SyntaxConstants {
                     public Pair<byte[], String> getClassFileContent(String path) throws IOException {
                         // name - .class
                         String fullName = path.substring(0, path.length() - 6);
-                        System.out.println("CFR Path: " + path);
-                        System.out.println("CFR substring: " + fullName);
-                        System.out.println("Type fullName: " + type.getFullName());
 
                         if (fullName.replace('/', '.').equals(type.getFullName())) {
-                            System.out.println(Pair.make(classBytes, fullName));
                             return Pair.make(classBytes, fullName);
                         }
 
@@ -547,8 +564,6 @@ public class OpenFile implements SyntaxConstants {
                 OutputSinkFactory cfrOutputSink = new OutputSinkFactory() {
                     @Override
                     public List<SinkClass> getSupportedSinks(SinkType sinkType, Collection<SinkClass> collection) {
-                        System.out.println("supported sink type " + sinkType);
-                        System.out.println("supported collection " + collection);
                         if (sinkType == SinkType.JAVA && collection.contains(SinkClass.DECOMPILED)) {
                             return Arrays.asList(SinkClass.DECOMPILED, SinkClass.STRING);
                         } else {
@@ -558,8 +573,6 @@ public class OpenFile implements SyntaxConstants {
 
                     @Override
                     public <T> Sink<T> getSink(SinkType sinkType, SinkClass sinkClass) {
-                        System.out.println("sink type " + sinkType);
-                        System.out.println("sink class " + sinkClass);
                         if (sinkType == SinkType.JAVA && sinkClass == OutputSinkFactory.SinkClass.DECOMPILED) {
                             return x -> cfrOutput = ((SinkReturns.Decompiled) x).getJava();
                         } else if (sinkType == SinkType.EXCEPTION) {
@@ -570,7 +583,7 @@ public class OpenFile implements SyntaxConstants {
                 };
                 CfrDriver CFR = new CfrDriver.Builder().withClassFileSource(cfs).withOutputSink(cfrOutputSink).build();
                 CFR.analyse(Collections.singletonList(type.getFullName()));
-                setContentPreserveLastScrollPosition(cfrOutput != null ? cfrOutput : "Null CFR output... Maybe it's loading?");
+                setContentPreserveLastScrollPosition(cfrOutput != null ? cfrOutput.split("\\*/\n", 2)[1] : "Null CFR output... Maybe it's loading?");
             } catch (Exception e) {
 		        StringWriter sw = new StringWriter();
 		        e.printStackTrace(new PrintWriter(sw));
