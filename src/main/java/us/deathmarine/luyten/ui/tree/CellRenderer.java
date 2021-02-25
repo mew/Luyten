@@ -11,18 +11,6 @@ import java.awt.*;
 
 public class CellRenderer extends DefaultTreeCellRenderer {
 	private static final long serialVersionUID = -5691181006363313993L;
-	Icon java_image;
-	Icon yml_image;
-	Icon file_image;
-
-	public CellRenderer() {
-		this.java_image = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/java.png")));
-		this.yml_image = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/yml.png")));
-		this.file_image = new ImageIcon(
-				Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/file.png")));
-	}
 	
 	@Override
 	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf,
@@ -30,6 +18,7 @@ public class CellRenderer extends DefaultTreeCellRenderer {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
         byte[] f = ((TreeNodeUserObject) node.getUserObject()).getFile();
+        String fn = getFileName(node).toLowerCase();
         if (node.getChildCount() > 0) {
             setIcon(ThemeUtil.PACKAGE_ICON);
 		} else if (f != null) {
@@ -37,13 +26,31 @@ public class CellRenderer extends DefaultTreeCellRenderer {
             ClassNode cn = new ClassNode();
             reader.accept(cn, ClassReader.SKIP_CODE);
             setIcon(ThemeUtil.getIconFromClassNode(cn));
-        } else if (getFileName(node).endsWith(".class") || getFileName(node).endsWith(".java")) {
-			setIcon(this.java_image);
-		} else if (getFileName(node).endsWith(".yml") || getFileName(node).endsWith(".yaml")) {
-			setIcon(this.yml_image);
-		} else {
-			setIcon(this.file_image);
-		}
+        } else if (fn.endsWith(".class") || fn.endsWith(".java")) {
+			setIcon(ThemeUtil.CLASS_ICON);
+		} else if (fn.endsWith(".yml") || fn.endsWith(".yaml")) {
+			setIcon(ThemeUtil.YAML_ICON);
+		} else if (fn.endsWith(".kt") || fn.endsWith(".kts")) {
+            setIcon(ThemeUtil.KOTLIN_FILE_ICON);
+        } else if (fn.endsWith(".js") || fn.endsWith(".jsx") || fn.endsWith(".ts") || fn.endsWith(".tsx")) {
+			setIcon(ThemeUtil.JAVASCRIPT_ICON);
+		} else if (fn.endsWith(".json")) {
+            setIcon(ThemeUtil.JSON_ICON);
+        } else if (fn.endsWith(".properties")) {
+            setIcon(ThemeUtil.PROPERTIES_ICON);
+        } else if (fn.endsWith(".mf")) {
+            setIcon(ThemeUtil.MANIFEST_ICON);
+        } else if (fn.endsWith(".c")) {
+            setIcon(ThemeUtil.C_ICON);
+        } else if (fn.endsWith(".cpp")) {
+            setIcon(ThemeUtil.CPP_ICON);
+        } else if (fn.endsWith(".h")) {
+            setIcon(ThemeUtil.H_ICON);
+        } else if (fn.endsWith("pom.xml")) {
+            setIcon(ThemeUtil.MAVEN_ICON);
+        } else if (fn.endsWith("gradle")) {
+            setIcon(ThemeUtil.GRADLE_ICON);
+        }
 
 		return this;
 	}

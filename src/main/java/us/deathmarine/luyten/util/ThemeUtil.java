@@ -16,9 +16,9 @@ public class ThemeUtil {
     public static final Icon PACKAGE_ICON = ICON_LOADER.getIcon("package.svg", true);
 
     /* Java Icons */
+    public static final Icon CLASS_ICON = ICON_LOADER.getIcon("class.svg");
     private static final Icon ABSTRACT_ICON = ICON_LOADER.getIcon("abstractClass.svg");
     private static final Icon ANNOTATION_ICON = ICON_LOADER.getIcon("annotationType.svg");
-    private static final Icon CLASS_ICON = ICON_LOADER.getIcon("class.svg");
     private static final Icon ENUM_ICON = ICON_LOADER.getIcon("enum.svg");
     private static final Icon INTERFACE_ICON = ICON_LOADER.getIcon("interface.svg");
     private static final Icon MAIN_CLASS_ICON = ICON_LOADER.getIcon("mainClass.svg");
@@ -36,6 +36,19 @@ public class ThemeUtil {
     private static final Icon SCALA_CLASS_ICON = ICON_LOADER.getIcon("classScala.svg");
     private static final Icon SCALA_ABSTRACT_ICON = ICON_LOADER.getIcon("abstractClassScala.svg");
     private static final Icon SCALA_CLASS_OBJECT_ICON = ICON_LOADER.getIcon("classObjectScala.svg");
+
+    /* Misc. Icons */
+    public static final Icon JAVASCRIPT_ICON = ICON_LOADER.getIcon("javaScript.svg");
+    public static final Icon YAML_ICON = ICON_LOADER.getIcon("yaml.svg");
+    public static final Icon JSON_ICON = ICON_LOADER.getIcon("json.svg");
+    public static final Icon PROPERTIES_ICON = ICON_LOADER.getIcon("properties.svg");
+    public static final Icon MANIFEST_ICON = ICON_LOADER.getIcon("manifest.svg");
+    public static final Icon C_ICON = ICON_LOADER.getIcon("c.svg");
+    public static final Icon CPP_ICON = ICON_LOADER.getIcon("cpp.svg");
+    public static final Icon H_ICON = ICON_LOADER.getIcon("h.svg");
+    public static final Icon MAVEN_ICON = ICON_LOADER.getIcon("maven.svg");
+    public static final Icon GRADLE_ICON = ICON_LOADER.getIcon("gradle.svg");
+
 
     public static void onThemeChange() {
         try {
@@ -77,6 +90,14 @@ public class ThemeUtil {
             } else if (AccessHelper.isAbstract(access)) {
                 return kotlin ? KOTLIN_ABSTRACT_ICON : scala ? SCALA_ABSTRACT_ICON : ABSTRACT_ICON;
             } else {
+                if (kotlin && (cn.fields.stream().anyMatch(it ->
+                    it.name.equals("INSTANCE") &&
+                    AccessHelper.isPublic(it.access) &&
+                    AccessHelper.isStatic(it.access) &&
+                    AccessHelper.isFinal(it.access))
+                )) {
+                    return KOTLIN_OBJECT_ICON;
+                }
                 return kotlin ? KOTLIN_CLASS_ICON : scala ? SCALA_CLASS_ICON : CLASS_ICON;
             }
         }

@@ -464,7 +464,11 @@ public class Model extends JSplitPane {
 			sameTitledOpen.setContent(sb.toString());
 			addOrSwitchToTab(sameTitledOpen);
 		} else {
-			OpenFile open = new OpenFile(tabTitle, path, getTheme(), IOUtils.toByteArray(inputStream), mainWindow);
+		    byte[] byteArray = null;
+		    try {
+		        byteArray = IOUtils.toByteArray(inputStream);
+            } catch (Exception ignored) { }
+			OpenFile open = new OpenFile(tabTitle, path, getTheme(), byteArray, mainWindow);
 			open.setDecompilerReferences(metadataSystem, settings, decompilationOptions);
 			open.setContent(sb.toString());
 			hmap.add(open);
