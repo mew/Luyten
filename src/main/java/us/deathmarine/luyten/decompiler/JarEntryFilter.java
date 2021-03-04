@@ -1,5 +1,9 @@
 package us.deathmarine.luyten.decompiler;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -39,13 +43,20 @@ public class JarEntryFilter {
 
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();
-			if (!e.isDirectory()) {
+			byte[] bytes = null;
+            try {
+                InputStream is = jfile.getInputStream(e);
+                bytes = IOUtils.toByteArray(is);
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+            if (!e.isDirectory()) {
 				String entryName = e.getName();
 
 				if (entryName != null && entryName.trim().length() > 0) {
 					entryName = entryName.trim();
 
-					if (!entryName.endsWith(".class")) {
+					if (!entryName.endsWith(".class") && !(bytes != null && OpenFile.getFirstBytes(bytes).startsWith("CAFEBABE"))) {
 						mass.add(entryName);
 
 						// com/acme/Model$16.class

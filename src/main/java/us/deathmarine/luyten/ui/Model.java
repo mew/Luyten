@@ -301,7 +301,7 @@ public class Model extends JSplitPane {
 				}
 				path = path + name;
 
-				if (file.getName().endsWith(".jar") || file.getName().endsWith(".zip")) {
+				if (isJar(file)) {
 					if (state == null) {
 						JarFile jfile = new JarFile(file);
 						ITypeLoader jarLoader = new JarTypeLoader(jfile);
@@ -318,13 +318,38 @@ public class Model extends JSplitPane {
 						throw new TooLargeFileException(entry.getSize());
 					}
 					String entryName = entry.getName();
-					if (entryName.endsWith(".class")) {
+					byte[] entryBytes = null;
+					try (InputStream is = state.jarFile.getInputStream(entry)) {
+					    entryBytes = IOUtils.toByteArray(is);
+                    }
+					boolean flag = entryBytes != null && OpenFile.getFirstBytes(entryBytes).startsWith("CAFEBABE");
+					if (entryName.endsWith(".class") || flag) {
 						getLabel().setText("Extracting: " + name);
-						String internalName = StringUtilities.removeRight(entryName, ".class");
-						InputStream jarInputStream = state.jarFile.getInputStream(entry);
-                        byte[] classBytes = IOUtils.toByteArray(jarInputStream);
+						//String internalName = StringUtilities.removeRight(entryName, ".class");
+                        String internalName = entryName;
+                        if (entryName.contains(".")) {
+                            internalName = StringUtilities.removeRight(entryName, ".");
+                        }
 						TypeReference type = metadataSystem.lookupType(internalName);
-						extractClassToTextPane(type, name, path, classBytes, null);
+                        if (type == null && flag) {
+                            type = new TypeReference() {
+                                @Override
+                                public String getSimpleName() {
+                                    return "HELLO_YES_THIS_IS_DOG!!!!!!!!" + entryName.hashCode();
+                                }
+
+                                @Override
+                                public <R, P> R accept(TypeMetadataVisitor<P, R> visitor, P parameter) {
+                                    return null;
+                                }
+
+                                @Override
+                                public TypeDefinition resolve() {
+                                    return new TypeDefinition();
+                                }
+                            };
+                        }
+						extractClassToTextPane(type, name, path, entryBytes, null);
 					} else {
 						getLabel().setText("Opening: " + name);
 						try (InputStream in = state.jarFile.getInputStream(entry)) {
@@ -540,6 +565,16 @@ public class Model extends JSplitPane {
 		return (selectedIndex >= 0 && selectedIndex == house.indexOfTab(title));
 	}
 
+	private boolean isJar(File archive) throws IOException {
+	    String name = archive.getName();
+
+        if (name.endsWith(".zip") || name.endsWith(".jar")) {
+            return true;
+        }
+
+        return OpenFile.getFirstBytes(FileUtils.readFileToByteArray(archive)).startsWith("504B0304");
+    }
+
 	final class State implements AutoCloseable {
 		private final String key;
 		private final File file;
@@ -676,7 +711,7 @@ public class Model extends JSplitPane {
                 if (file.length() > MAX_JAR_FILE_SIZE_BYTES) {
                     throw new TooLargeFileException(file.length());
                 }
-                if (file.getName().endsWith(".zip") || file.getName().endsWith(".jar")) {
+                if (isJar(file)) {
                     JarFile jfile;
                     jfile = new JarFile(file);
                     getLabel().setText("Loading: " + jfile.getName());

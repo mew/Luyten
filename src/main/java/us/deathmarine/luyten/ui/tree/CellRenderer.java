@@ -22,11 +22,18 @@ public class CellRenderer extends DefaultTreeCellRenderer {
         if (node.getChildCount() > 0) {
             setIcon(ThemeUtil.PACKAGE_ICON);
 		} else if (f != null) {
-            ClassReader reader = new ClassReader(f);
-            ClassNode cn = new ClassNode();
-            reader.accept(cn, ClassReader.SKIP_CODE);
-            setIcon(ThemeUtil.getIconFromClassNode(cn));
-        } else if (fn.endsWith(".class") || fn.endsWith(".java")) {
+            try {
+                ClassReader reader = new ClassReader(f);
+                ClassNode cn = new ClassNode();
+                reader.accept(cn, ClassReader.SKIP_CODE);
+                setIcon(ThemeUtil.getIconFromClassNode(cn));
+                return this;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (fn.endsWith(".class") || fn.endsWith(".java")) {
 			setIcon(ThemeUtil.CLASS_ICON);
 		} else if (fn.endsWith(".yml") || fn.endsWith(".yaml")) {
 			setIcon(ThemeUtil.YAML_ICON);

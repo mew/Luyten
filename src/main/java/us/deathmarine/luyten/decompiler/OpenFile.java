@@ -502,6 +502,16 @@ public class OpenFile implements SyntaxConstants {
 	private String cfrOutput = null;
 
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    public static String getFirstBytes(byte[] bytes) {
+        boolean bg8 = bytes.length > 8;
+        char[] hexChars = new char[bg8 ? 8 : bytes.length * 2];
+        for (int i = 0; i < (bg8 ? 4 : bytes.length); i++) {
+            int v = bytes[i] & 0xFF;
+            hexChars[i * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[i * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
@@ -525,7 +535,7 @@ public class OpenFile implements SyntaxConstants {
             enableLinks();
         } else {
 		    System.out.println(name + ":");
-		    System.out.println(bytesToHex(classBytes));
+		    System.out.println(getFirstBytes(classBytes));
 		    System.out.println("---------------------------------");
             ClassReader cr = new ClassReader(classBytes);
             ClassNode cn = new ClassNode();
